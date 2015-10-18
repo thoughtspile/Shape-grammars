@@ -1,0 +1,11 @@
+{
+  "name": "gen-gram",
+  "version": "0.0.1",
+  "description": "Generative grammar experiment in js",
+  "main": "gen.js",
+  "scripts": {
+    "test": "node node-tests"
+  },
+  "author": "",
+  "license": "MIT"
+}
