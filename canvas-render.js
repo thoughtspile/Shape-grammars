@@ -1,12 +1,12 @@
 var render = function(target, data) {
-    var width = 10;
-    var maxHeight = 20;
     var canvasHeight = 300;
-    var topOffset = 50;
     data.reduce(function(offset, state) {
-        if (state == 'wall') {
-            var bldHeight = Math.random() * maxHeight;
-            target.fillRect(offset, canvasHeight - bldHeight, width, bldHeight);
+        var width = state.width;
+        if (state.type == 'house') {
+            var height = state.height;
+            target.fillRect(offset, canvasHeight - height, width, height);
+        } else if (state.type == 'gap') {
+            target.fillRect(offset, canvasHeight - 1, width, 1);
         }
         return offset + width;
     }, 0);

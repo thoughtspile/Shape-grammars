@@ -1,6 +1,26 @@
 (function() {
-    function makeState(id) {
-        return id;
+    function clone(obj) {
+        if (!(obj instanceof Object))
+            return obj;
+        var cloneObj = {};
+        for (var key in obj) {
+            cloneObj[key] = clone(obj[key]);
+        }
+        return cloneObj;
+    }
+
+    var counter = 0;
+    function makeId() { return counter++; }
+
+
+    function makeState(obj) {
+        obj = obj || {};
+        obj.id = makeId();
+        return obj;
+    }
+
+    function cmpState(st1, st2) {
+        return st1.id === st2.id;
     }
 
     var grammar = [];
@@ -13,32 +33,43 @@
 
     grammar.getRule = function(state) {
         return this.reduce(function(done, rule) {
-            return done || (rule.from == state? rule: done);
+            return done || (cmpState(rule.from, state)? rule: done);
         }, null)
     };
 
     grammar.addRule = function(from, to) {
+        if (!(to instanceof Function)) {
+            var toOld = to;
+            to = function() { return toOld; };
+        }
         (this.getRule(from) || this.addState(from)).to.push(to);
         return this;
     };
 
 
-    var city = makeState('city');
-    var distr = makeState('district');
-    var house = makeState('wall');
-    var gap = makeState('gap');
-    var cell = makeState('cell');
+    var city = makeState();
+    var distr = makeState();
+    var height = makeState();
+    var lot = makeState();
     var init = city;
     grammar
         .addRule(city, rep(5, distr))
-        .addRule(distr, rep(10, cell))
-        .addRule(cell, gap)
-        .addRule(cell, house);
+        .addRule(distr, function() {
+            return rep(randi(2, 10), lot);
+        })
+        .addRule(lot, function() {
+            return {
+                type: 'house',
+                height: randi(10, 100),
+                width: 10
+            }
+        })
+        .addRule(lot, {type: 'gap', width: 10})
 
     function rep(n, el) {
         var arr = [];
         for (var i = 0; i < n; i++)
-            arr.push(el);
+            arr.push(clone(el));
         return arr;
     }
 
@@ -52,7 +83,7 @@
 
     function randExpand(token) {
         var transitions = grammar.getRule(token).to;
-        return transitions[randi(0, transitions.length)];
+        return transitions[randi(0, transitions.length)]();
     }
 
 
@@ -70,6 +101,7 @@
     }
 
     gen.grammar = grammar;
+    gen.clone = clone;
 
     if (typeof window != 'undefined')
         window.gen = gen;
