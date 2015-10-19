@@ -9,21 +9,35 @@
         return cloneObj;
     }
 
+    function rep(n, el) {
+        var arr = [];
+        for (var i = 0; i < n; i++)
+            arr.push(clone(el));
+        return arr;
+    }
+
+    function randi(min, max) {
+        return min + Math.floor((max - min) * Math.random());
+    }
+
     var counter = 0;
-    function makeId() { return counter++; }
+    function makeId() {
+        return counter++;
+    }
 
 
-    function makeState(obj) {
+
+    var grammar = [];
+
+    grammar.cmp = function(st1, st2) {
+        return st1.id === st2.id;
+    };
+
+    grammar.register = function(obj) {
         obj = obj || {};
         obj.id = makeId();
         return obj;
     }
-
-    function cmpState(st1, st2) {
-        return st1.id === st2.id;
-    }
-
-    var grammar = [];
 
     grammar.addState = function(state) {
         var rule = {from: state, to: []};
@@ -33,8 +47,8 @@
 
     grammar.getRule = function(state) {
         return this.reduce(function(done, rule) {
-            return done || (cmpState(rule.from, state)? rule: done);
-        }, null)
+            return done || (this.cmp(rule.from, state)? rule: done);
+        }.bind(this), null)
     };
 
     grammar.addRule = function(from, to) {
@@ -46,11 +60,33 @@
         return this;
     };
 
+    grammar.isNonTerminal = function(token) {
+        return this.getRule(token) != null;
+    };
 
-    var city = makeState();
-    var distr = makeState();
-    var height = makeState();
-    var lot = makeState();
+    grammar.expandState = function(token) {
+        var transitions = this.getRule(token).to;
+        return transitions[randi(0, transitions.length)]();
+    };
+
+    grammar.apply = function(root) {
+        var state = root? root.slice(): [init];
+        while(state.some(this.isNonTerminal.bind(this))) {
+            state = state.reduce(function(state, token) {
+                return state.concat(this.isNonTerminal(token)?
+                    this.expandState(token):
+                    token
+                );
+            }.bind(this), []);
+        }
+        return state;
+    };
+
+
+    var city = grammar.register();
+    var distr = grammar.register();
+    var height = grammar.register();
+    var lot = grammar.register();
     var init = city;
     grammar
         .addRule(city, rep(5, distr))
@@ -66,43 +102,8 @@
         })
         .addRule(lot, {type: 'gap', width: 10})
 
-    function rep(n, el) {
-        var arr = [];
-        for (var i = 0; i < n; i++)
-            arr.push(clone(el));
-        return arr;
-    }
 
-    function randi(min, max) {
-        return min + Math.floor((max - min) * Math.random());
-    }
-
-    function isNonTerminal(token) {
-        return grammar.getRule(token) != null;
-    }
-
-    function randExpand(token) {
-        var transitions = grammar.getRule(token).to;
-        return transitions[randi(0, transitions.length)]();
-    }
-
-
-    function gen(root) {
-        var state = root? root.slice(): [init];
-        while(state.some(isNonTerminal)) {
-            state = state.reduce(function(state, token) {
-                return state.concat(isNonTerminal(token)?
-                    randExpand(token):
-                    token
-                );
-            }, []);
-        }
-        return state;
-    }
-
-    gen.grammar = grammar;
-    gen.clone = clone;
-
+    var gen = grammar.apply.bind(grammar); 
     if (typeof window != 'undefined')
         window.gen = gen;
     if (typeof module != 'undefined')
