@@ -12,29 +12,69 @@
         <script>
             var canvas = document.getElementById('canvas');
 
-            var city = gen.addState();
-            var distr = gen.addState(function() {
-                console.log('mkdistr')
-                return {
-                    color: '#' + randi(0, Math.pow(256, 3)).toString(16)
-                };
-            });
+            var distr = gen.init();
             var lot = gen.addState();
-            var house = gen.addState(function(parent) {
-                console.log('mkhaus')
-                return {
-                    color: parent.color,
-                    type: 'house',
-                    height: randi(10, 100),
-                    width: 10
-                };
+            var house = gen.addState(function() {
+                this.color = '#' + randi(0, Math.pow(256, 3)).toString(16);
+            });
+            var floor = gen.addState(function(parent) {
+                this.color = parent.color;
+            });
+            var wall = gen.addState(function(parent) {
+                this.color = parent.color;
+                this.height = 20;
+                this.width = 30;
+            });
+            var win = gen.addState(function() {
+                this.color = 'rgba(20, 20, 20, .7)';
+                this.height = 8;
+                this.width = 6;
+            }).mv(0, 6);
+            var roof = gen.addState();
+            var roofTile = gen.addState(function(parent) {
+                this.color = 'rgb(200, ' + randi(120, 150) + ', 0)';
+                this.height = 2;
+                this.width = 2;
             });
 
-            gen.addRule(city, distr)
-                .addRule(distr, lot)
-                .addRule(lot, house)
-                .addRule(lot, {type: 'gap', width: 10})
-                .init(city);
+            var street = gen.addState(function() {
+                this.color = 'gray';
+                this.height = 1;
+                this.width = 30;
+            });
+            var tree = gen.addState().mv(15, 0);
+            var trunk = gen.addState(function() {
+                this.color = 'brown';
+                this.width = 4;
+                this.height = 20;
+            }).mv(-2, 0);
+            var crown = gen.addState(function() {
+            }).mv(0, 20);
+            var leaf = gen.addState(function() {
+                this.color = 'rgb(0,' + randi(100, 200) + ',0)';
+                this.width = randi(2, 4);
+                this.height = randi(2, 4);
+            });
+
+            gen.addRule(distr, rep(20, lot).map(function(succ, i) {
+                    return succ.mv(30 * i, 0);
+                }))
+                .addRule(lot, [house])
+                .addRule(lot, [street, tree])
+                .addRule(house, rep(3, floor).map(function(succ, i) {
+                    return succ.mv(0, 20 * i);
+                }).concat(roof.mv(0, 60)))
+                .addRule(floor, [wall, win.mv(5, 6), win.mv(19, 6)])
+                .addRule(house, [floor, roof.mv(0, 20)])
+                .addRule(roof, rep(30 * 20 / 4, roofTile).map(function(tile, i) {
+                    var row = Math.floor(i / 10);
+                    return tile.mv(2 * row, 2 * (i - 10 * row));
+                }))
+                .addRule(tree, [trunk, crown])
+            for (var i = 0; i < 10; i++)
+                gen.addRule(crown, rep(120, leaf).map(function(leaf) {
+                    return leaf.mv(randi(-12, 12), randi(-10, 15));
+                }));
 
             render(canvas, gen.apply());
             //renderBlocks(canvas, tile())

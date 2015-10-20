@@ -11,18 +11,16 @@ var render = function(canvas, data) {
     var canvasHeight = canvas.height;
     var target = canvas.getContext('2d');
 
-    data.reduce(function(offset, state) {
+    data.forEach(function(state) {
         var width = state.width;
-        if (state.type == 'house') {
-            var height = state.height;
-            target.fillRect(offset, canvasHeight - height, width, height);
-            target.fillStyle = state.color;
-            target.fill();
-        } else if (state.type == 'gap') {
-            target.fillRect(offset, canvasHeight - 1, width, 1);
-        }
-        return offset + width;
-    }, 0);
+        target.fillStyle = state.color;
+        var height = state.height;
+        var width = state.width;
+        target.fillRect(
+            state.scope.pos[0], canvasHeight - state.scope.pos[1] - height,
+            width, height);
+        target.fill();
+    });
 };
 
 var renderBlocks = function(canvas, data) {
