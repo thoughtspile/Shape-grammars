@@ -4,13 +4,40 @@
         <meta charset="utf-8">
         <title></title>
     </head>
-    <body>
-        <canvas id="canvas" width="300" height="300"></canvas>
+    <body style= 'margin: 0; width: 100%'>
+        <canvas id="canvas" style= 'width: 100%; height: 300px;'></canvas>
+        <script src = utils.js></script>
         <script src = gen.js></script>
         <script src = canvas-render.js></script>
         <script>
-            var canvas = document.getElementById('canvas').getContext('2d');
-            render(canvas, gen());
+            var canvas = document.getElementById('canvas');
+
+            var city = gen.addState();
+            var distr = gen.addState(function() {
+                console.log('mkdistr')
+                return {
+                    color: '#' + randi(0, Math.pow(256, 3)).toString(16)
+                };
+            });
+            var lot = gen.addState();
+            var house = gen.addState(function(parent) {
+                console.log('mkhaus')
+                return {
+                    color: parent.color,
+                    type: 'house',
+                    height: randi(10, 100),
+                    width: 10
+                };
+            });
+
+            gen.addRule(city, distr)
+                .addRule(distr, lot)
+                .addRule(lot, house)
+                .addRule(lot, {type: 'gap', width: 10})
+                .init(city);
+
+            render(canvas, gen.apply());
+            //renderBlocks(canvas, tile())
         </script>
     </body>
 </html>
