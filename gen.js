@@ -11,16 +11,28 @@
                 pos: [
                     parent.scope.pos[0] + factory.translation[0],
                     parent.scope.pos[1] + factory.translation[1]
-                ]
+                ],
+                size: [factory.size[0], factory.size[1]]
             };
             return obj;
         };
         factory.id = id;
         factory.translation = [0, 0];
+        factory.size = [1, 1];
         factory.mv = function(x, y) {
             var altFactory = stateFactory(blueprint, id);
-            altFactory.translation[0] = x;
-            altFactory.translation[1] = y;
+            altFactory.translation[0] = factory.translation[0] + x;
+            altFactory.translation[1] = factory.translation[0] + y;
+            altFactory.size[0] = factory.size[0];
+            altFactory.size[1] = factory.size[1];
+            return altFactory;
+        };
+        factory.resize = function(x, y) {
+            var altFactory = stateFactory(blueprint, id);
+            altFactory.translation[0] = factory.translation[0];
+            altFactory.translation[1] = factory.translation[0];
+            altFactory.size[0] = x;
+            altFactory.size[1] = y;
             return altFactory;
         };
         return factory;
@@ -44,15 +56,29 @@
 
     // wrap, push to rule, return self
     grammar.addRule = function(from, to) {
-        this.getRule(from).to.push(to);
+        this.getRule(from).to.push(function() { return to; });
         return this;
     }
 
-    // set initial state
-    grammar.init = function(state) {
-        this._init = this.addState(state || function() {
-            this.scope = { pos: [0, 0] };
+    // tiling rule; to is a state
+    grammar.repeat = function(from, axis, to) {
+        this.getRule(from).to.push(function(token) {
+            var toInstance = to(token);
+            var toSize = toInstance.scope.size[axis];
+            console.log(token, toInstance)
+            var repCount = Math.ceil(token.scope.size[axis] / toSize);
+            return rep(repCount, to).map(function(succ, i) {
+                var x = axis == 0? toSize * i: 0;
+                var y = axis == 1? toSize * i: 0;
+                return succ.mv(x, y);
+            });
         });
+        return this;
+    };
+
+    // set initial state
+    grammar.init = function() {
+        this._init = this.addState(function() { });
         return this._init;
     };
 
@@ -63,9 +89,10 @@
 
     grammar.expandState = function(token) {
         var transitions = this.getRule(token).to;
-        return transitions[randi(0, transitions.length)].map(function(succ) {
-            return succ(token);
-        });
+        return transitions[randi(0, transitions.length)](token)
+            .map(function(succ) {
+                return succ(token);
+            });
     };
 
     grammar.apply = function(root) {

@@ -7,28 +7,23 @@ var setupCanvas = function(target) {
 };
 
 var render = function(canvas, data) {
-    setupCanvas(canvas);
     var canvasHeight = canvas.height;
     var target = canvas.getContext('2d');
+
+    var grd = target.createLinearGradient(0,0,0,canvas.height);
+    grd.addColorStop(0,"skyblue");
+    grd.addColorStop(1,"white");
+    target.fillStyle = grd;
+    target.fillRect(0, 0, canvas.width, canvas.height);
 
     data.forEach(function(state) {
         var width = state.width;
         target.fillStyle = state.color;
-        var height = state.height;
-        var width = state.width;
+        var height = state.scope.size[1];//height;
+        var width = state.scope.size[0];
         target.fillRect(
             state.scope.pos[0], canvasHeight - state.scope.pos[1] - height,
             width, height);
         target.fill();
     });
 };
-
-var renderBlocks = function(canvas, data) {
-    setupCanvas(canvas);
-    var target = canvas.getContext('2d');
-    data.forEach(function(tile) {
-        target.fillRect(tile.l, tile.t, tile.w, tile.h);
-        target.fillStyle = '#' + Math.floor(16777216 * Math.random()).toString(16);
-        target.fill();
-    })
-}
