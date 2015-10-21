@@ -65,13 +65,25 @@
         this.getRule(from).to.push(function(token) {
             var toInstance = to(token);
             var toSize = toInstance.scope.size[axis];
-            console.log(token, toInstance)
             var repCount = Math.ceil(token.scope.size[axis] / toSize);
             return rep(repCount, to).map(function(succ, i) {
                 var x = axis == 0? toSize * i: 0;
                 var y = axis == 1? toSize * i: 0;
                 return succ.mv(x, y);
             });
+        });
+        return this;
+    };
+
+    grammar.split = function(from , axis, to) {
+        this.getRule(from).to.push(function(token) {
+            var offset = 0;
+            return to.reduce(function(stack, next) {
+                var x = axis == 0? offset: 0;
+                var y = axis == 1? offset: 0;
+                offset += next(token).scope.size[axis];
+                return stack.concat(next.mv(x, y));
+            }, []);
         });
         return this;
     };
@@ -108,6 +120,8 @@
         return state;
     };
 
+
+    grammar.init();
 
     if (typeof window != 'undefined')
         window.gen = grammar;
