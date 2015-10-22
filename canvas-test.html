@@ -27,11 +27,24 @@
             }).resize(30, 20);
             var win = gen.addState(function() {
                 this.color = 'rgba(20, 20, 20, .7)';
-            }).mv(0, 6).resize(6, 8);
+            }).mv(0, 6).resize(7, 8);
+            var winGlass = gen.addState(function() {
+                this.color = 'rgba(' +
+                    randi(20, 80) +', ' +
+                    randi(40, 100) + ', ' +
+                    randi(20, 50) + ', .8)';
+            }).resize(7, 8);
+            var vertFrame = gen.addState(function() {
+                this.color = 'rgba(150, 140, 60, .7)';
+            }).resize(1, 8).mv(3, 0);
+            var horzFrame = gen.addState(function() {
+                this.color = 'rgba(150, 140, 60, .7)';
+            }).resize(7, 1).mv(0, 4); // why no mv before resize
             var roof = gen.addState().resize(30, 15);
+            var roofStruct = gen.addState().resize(30, 15);
             var roofTileRow = gen.addState()
             var roofTile = gen.addState(function() {
-                this.color = 'rgb(200, ' + randi(120, 150) + ', 0)';
+                this.color = 'rgb(200, ' + randi(80, 180) + ', 0)';
             }).resize(2, 2);
             var street = gen.addState(function() {
                 this.color = 'gray';
@@ -45,6 +58,9 @@
             var leaf = gen.addState(function() {
                 this.color = 'rgb(0,' + randi(100, 200) + ',0)';
             }).resize(3, 3);
+            var shadow = gen.addState(function() {
+                this.color = 'rgba(0,0,0,.4)';
+            });
 
             // grammar
             gen.addRule(gen._init, [distr])
@@ -52,13 +68,19 @@
                 .addRule(lot, [house])
                 .addRule(lot, [street, tree])
                 .split(house, 1, [floor, floor, floor, roof])
-                .split(house, 1, [floor, roof])
-                .addRule(floor, [wall, win.mv(5, 6), win.mv(19, 6)])
-                .repeat(roof, 1, roofTileRow.resize(30, 2))
-                .addRule(roof, rep(10, roofTileRow).map(function(row, i) {
-                    return row.resize(30 - 2 * i, 2).mv(i, i);
+                .split(house, 1, [floor, floor, roof])
+                .addRule(floor, [wall, win.mv(5, 6), win.mv(18, 6)])
+                .addRule(win, [
+                    shadow.resize(7, 2).mv(0, 6),
+                    winGlass,
+                    horzFrame,
+                    vertFrame])
+                .addRule(roof, [shadow.resize(30, 2).mv(0, -2), roofStruct])
+                .repeat(roofStruct, 1, roofTileRow.resize(32, 2).mv(-1, 1))
+                .addRule(roofStruct, rep(10, roofTileRow).map(function(row, i) {
+                    return row.resize(32 - 2 * i, 2).mv(i - 1, i);
                 }))
-                .addRule(roof, [roofTileRow.resize(34, 2).mv(-2,-2)])
+                .addRule(roofStruct, [roofTileRow.resize(34, 2).mv(-2, 0)])
                 .repeat(roofTileRow, 0, roofTile)
                 .addRule(tree, [trunk, crown, crown, crown])
 
