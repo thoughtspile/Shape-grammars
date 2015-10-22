@@ -5,7 +5,8 @@
     function stateFactory(blueprint, id) {
         var factory = function(parent) {
             parent = parent || { scope: { pos: [0, 0] } };
-            var obj = new blueprint(parent);
+            var obj = Object.assign({}, parent);
+            blueprint.call(obj, parent);
             obj.id = id;
             obj.scope = {
                 pos: [
@@ -105,7 +106,6 @@
         var transitions = this.getRule(token).to.filter(function(transition) {
             return transition.cond(token);
         });
-        console.log(transitions[0](token))
         return transitions[randi(0, transitions.length)](token)
             .map(function(succ, i) {
                 var temp = succ(token);

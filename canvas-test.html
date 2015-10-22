@@ -19,12 +19,8 @@
             var house = gen.addState(function() {
                 this.color = '#' + randi(0, Math.pow(256, 3)).toString(16);
             });
-            var floor = gen.addState(function(parent) {
-                this.color = parent.color;
-            }).resize(30, 20);
-            var wall = gen.addState(function(parent) {
-                this.color = parent.color;
-            }).resize(30, 20);
+            var floor = gen.addState().resize(30, 20);
+            var wall = gen.addState().resize(30, 20);
             var door = gen.addState(function() {
                 this.color = 'rgba(20, 20, 20, .7)';
             }).resize(7, 14);
