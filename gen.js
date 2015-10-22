@@ -55,14 +55,16 @@
     };
 
     // wrap, push to rule, return self
-    grammar.addRule = function(from, to) {
-        this.getRule(from).to.push(function() { return to; });
+    grammar.addRule = function(from, to, cond) {
+        var transition = to instanceof Function? to: function() { return to; };
+        transition.cond = cond || function() { return true; };
+        this.getRule(from).to.push(transition);
         return this;
     }
 
     // tiling rule; to is a state
-    grammar.repeat = function(from, axis, to) {
-        this.getRule(from).to.push(function(token) {
+    grammar.repeat = function(from, axis, to, cond) {
+        this.addRule(from, function(token) {
             var toInstance = to(token);
             var toSize = toInstance.scope.size[axis];
             var repCount = Math.ceil(token.scope.size[axis] / toSize);
@@ -71,12 +73,12 @@
                 var y = axis == 1? toSize * i: 0;
                 return succ.mv(x, y);
             });
-        });
+        }, cond);
         return this;
     };
 
-    grammar.split = function(from , axis, to) {
-        this.getRule(from).to.push(function(token) {
+    grammar.split = function(from , axis, to, cond) {
+        this.addRule(from, function(token) {
             var offset = 0;
             return to.reduce(function(stack, next) {
                 var x = axis == 0? offset: 0;
@@ -84,7 +86,7 @@
                 offset += next(token).scope.size[axis];
                 return stack.concat(next.mv(x, y));
             }, []);
-        });
+        }, cond);
         return this;
     };
 
@@ -100,10 +102,15 @@
     };
 
     grammar.expandState = function(token) {
-        var transitions = this.getRule(token).to;
+        var transitions = this.getRule(token).to.filter(function(transition) {
+            return transition.cond(token);
+        });
+        console.log(transitions[0](token))
         return transitions[randi(0, transitions.length)](token)
-            .map(function(succ) {
-                return succ(token);
+            .map(function(succ, i) {
+                var temp = succ(token);
+                temp.locator = i;
+                return temp;
             });
     };
 
