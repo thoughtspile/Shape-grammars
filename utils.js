@@ -10,11 +10,11 @@ function randi(min, max) {
 
 function randClr(rspan, gspan, bspan, aspan) {
     var args = Array.prototype.slice.call(arguments);
-    args.length = 3;
+    args.length = 4;
     return 'rgba(' + args.map(function(span, i) {
-            return span || [0, i != 3? 256: 1];
+            return span != null? span: [0, i != 3? 256: 1];
         })
-        .map(function(rgba, span, i) {
+        .map(function(span, i) {
             return Array.isArray(span)? randi(span[0], span[1]): span;
         })
         .join(', ') + ')';
