@@ -6,6 +6,8 @@
 </head>
 <body style= 'margin: 0; width: 100%'>
     <canvas id="canvas" style= 'width: 100%; height: 300px;'></canvas>
+    <button id = 'runBtn'>run</button>
+
     <script src = utils.js></script>
     <script src = gen.js></script>
     <script src = canvas-render.js></script>
@@ -14,20 +16,25 @@
         setupCanvas(canvas);
 
         // descriptions
+        var shadow = gen.addState(function() {
+            this.color = 'rgba(0,0,0,.4)';
+        });
         var distr = gen.addState().resize(canvas.width, canvas.height);
         var lot = gen.addState().resize(30, 100);
+
         var house = gen.addState(function() {
             this.color = randClr(null, null, null, .7);
-            //this.color = '#' + randi(0, Math.pow(256, 3)).toString(16);
         });
         var floor = gen.addState().resize(30, 20);
         var wall = gen.addState().resize(30, 20);
         var door = gen.addState(function() {
             this.color = 'rgba(20, 20, 20, .7)';
         }).resize(7, 14);
-        var win = gen.addState(function() {
-            this.color = randClr([20, 80], [40, 100], [20, 50], .8);
-        }).mv(0, 6).resize(7, 8);
+        var shopShade =  gen.addState(function() {
+            this.color = randClr(null, null, null, 1);
+        }).resize(30, 7).mv(0, 13);
+
+        var win = gen.addState().mv(0, 6).resize(7, 8);
         var winGlass = gen.addState(function() {
             this.color = randClr([20, 80], [40, 100], [20, 50], .8);
         }).resize(7, 8);
@@ -37,12 +44,14 @@
         var horzFrame = gen.addState(function() {
             this.color = 'rgba(150, 140, 60, .7)';
         }).resize(7, 1).mv(0, 4); // why no mv before resize
+
         var roof = gen.addState().resize(30, 15);
         var roofStruct = gen.addState().resize(30, 15);
         var roofTileRow = gen.addState()
         var roofTile = gen.addState(function() {
             this.color = randClr(200, [80, 180], 0, 1);
         }).resize(2, 2);
+
         var street = gen.addState(function() {
             this.color = 'gray';
         }).resize(30, 1);
@@ -50,21 +59,14 @@
         var trunk = gen.addState(function() {
             this.color = 'rgb(130, 70, 0)';
         }).mv(-2, 0).resize(4, 20);
-        var crown = gen.addState(function() {
-        }).mv(0, 20);
+        var crown = gen.addState().mv(0, 20);
         var leaf = gen.addState(function() {
             this.color = randClr(40, [100, 200], 0, .7);
         }).resize(3, 3);
-        var shadow = gen.addState(function() {
-            this.color = 'rgba(0,0,0,.4)';
-        });
-        var shopShade =  gen.addState(function() {
-            this.color = randClr(null, null, null, 1);
-        }).resize(30, 7).mv(0, 13);
 
         // grammar
         gen.addRule(gen._init, [distr])
-            .repeat(distr, 0, lot)
+            .repeat(distr, 0, [lot])
             .addRule(lot, [house])
             .addRule(lot, [street, tree])
             .split(house, 1, [floor, floor, floor, roof])
@@ -79,12 +81,12 @@
                 horzFrame,
                 vertFrame])
             .addRule(roof, [shadow.resize(30, 2).mv(0, -2), roofStruct])
-            .repeat(roofStruct, 1, roofTileRow.resize(32, 2).mv(-1, 1))
+            .repeat(roofStruct, 1, [roofTileRow.resize(32, 2).mv(-1, 1)])
             .addRule(roofStruct, rep(10, roofTileRow).map(function(row, i) {
                 return row.resize(32 - 2 * i, 2).mv(i - 1, i);
             }))
             .addRule(roofStruct, [roofTileRow.resize(34, 2).mv(-2, 0)])
-            .repeat(roofTileRow, 0, roofTile)
+            .repeat(roofTileRow, 0, [roofTile])
             .addRule(tree, [trunk, crown, crown, crown])
 
         for (var i = 0; i < 10; i++)
@@ -92,8 +94,9 @@
                 return leaf.mv(randi(-12, 12), randi(-10, 15));
             })).addRule(crown, [crown.mv(randi(-3, 3), randi(-3, 3))])
 
-        render(canvas, gen.apply());
-        //renderBlocks(canvas, tile())
+        function run() { render(canvas, gen.apply()); };
+        document.getElementById('runBtn').addEventListener('click', run);
+        run();
     </script>
 </body>
 </html>

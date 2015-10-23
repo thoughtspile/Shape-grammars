@@ -3,6 +3,8 @@
     grammar.counter = 0;
 
     function stateFactory(blueprint, id) {
+        if (!(blueprint instanceof Function))
+            blueprint = objFill.bind(null, blueprint);
         var factory = function(parent) {
             parent = parent || { scope: { pos: [0, 0] } };
             var obj = Object.assign({}, parent);
@@ -66,14 +68,17 @@
     // tiling rule; to is a state
     grammar.repeat = function(from, axis, to, cond) {
         this.addRule(from, function(token) {
-            var toInstance = to(token);
-            var toSize = toInstance.scope.size[axis];
+            var toSize = to.reduce(function(blockSize, child) {
+                return blockSize + child(token).scope.size[axis];
+            }, 0);
             var repCount = Math.ceil(token.scope.size[axis] / toSize);
-            return rep(repCount, to).map(function(succ, i) {
+            return rep(repCount, to).reduce(function(buff, succ, i) {
                 var x = axis == 0? toSize * i: 0;
                 var y = axis == 1? toSize * i: 0;
-                return succ.mv(x, y);
-            });
+                return buff.concat(succ.map(function(item) {
+                    return item.mv(x, y);
+                }));
+            }, []);
         }, cond);
         return this;
     };

@@ -19,3 +19,12 @@ function randClr(rspan, gspan, bspan, aspan) {
         })
         .join(', ') + ')';
 }
+
+function objFill(from) {
+    for (var key in from)
+        if (from[key] instanceof Function)
+            this[key] = from[key]();
+        else
+            this[key] = from[key];
+    return this;
+}
