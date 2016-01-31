@@ -4,6 +4,7 @@
     function Grammar() {
         this.states = [];
         this.counter = 0;
+        this.init();
         return this;
     };
 
@@ -150,11 +151,13 @@
             setTimeout(this.apply.bind(this, newState, callback), 0);
     };
 
-    var grammar = new Grammar();
-    grammar.init();
+
+    function grammar() {
+        return new Grammar();
+    }
 
     if (typeof window != 'undefined')
-        window.gen = grammar;
+        window.grammar = grammar;
     if (typeof module != 'undefined')
         module.exports = grammar;
 }());

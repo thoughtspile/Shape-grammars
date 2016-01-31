@@ -1,6 +1,9 @@
 (function () {
     'use strict';
 
+    var gen = grammar();
+    window.gen = gen;
+
     // descriptions
     var shadow = gen.addState(function () {
         this.color = 'rgba(0,0,0,.4)';
