@@ -1,11 +1,19 @@
-(function() {
-    var grammar = [];
-    grammar.counter = 0;
+(function () {
+    'use strict';
+
+    function Grammar() {
+        this.states = [];
+        this.counter = 0;
+        return this;
+    };
+
+    window.Grammar = Grammar;
 
     function stateFactory(blueprint, id) {
-        if (!(blueprint instanceof Function))
+        if (!(blueprint instanceof Function)) {
             blueprint = objFill.bind(null, blueprint);
-        var factory = function(parent) {
+        }
+        var factory = function (parent) {
             parent = parent || { scope: { pos: [0, 0] } };
             var obj = Object.assign({}, parent);
             blueprint.call(obj, parent);
@@ -22,7 +30,7 @@
         factory.id = id;
         factory.translation = [0, 0];
         factory.size = [1, 1];
-        factory.mv = function(x, y) {
+        factory.mv = function (x, y) {
             var altFactory = stateFactory(blueprint, id);
             altFactory.translation[0] = factory.translation[0] + x;
             altFactory.translation[1] = factory.translation[0] + y;
@@ -30,7 +38,7 @@
             altFactory.size[1] = factory.size[1];
             return altFactory;
         };
-        factory.resize = function(x, y) {
+        factory.resize = function (x, y) {
             var altFactory = stateFactory(blueprint, id);
             altFactory.translation[0] = factory.translation[0];
             altFactory.translation[1] = factory.translation[0];
@@ -42,30 +50,35 @@
     }
 
     // wrap, push, return key
-    grammar.addState = function(blueprint) {
-        blueprint = blueprint || function() {};
-        var factory = stateFactory(blueprint, grammar.counter++);
-        var rule = {from: factory, to: []};
-        this.push(rule);
+    Grammar.prototype.addState = function (blueprint) {
+        blueprint = blueprint || function () {};
+        var factory = stateFactory(blueprint, this.counter);
+        this.counter++;
+        this.states.push({
+            from: factory,
+            to: []
+        });
         return factory;
     };
 
     // query, add if absent, return rule
-    grammar.getRule = function(state) {
-        return this.reduce(function(done, rule) {
-            return done || (rule.from.id == state.id? rule: done);
-        }.bind(this), null) || this.getRule(this.addState(state));
+    Grammar.prototype.getRule = function (state) {
+        for (var i = 0; i < this.states.length; i++)
+            if (this.states[i].from.id === state.id)
+                return this.states[i].to;
+        return this.getRule(this.addState(state));
     };
 
     // wrap, push to rule, return self
-    grammar.rule = function(from, to, cond) {
+    Grammar.prototype.rule = function (from, to, cond) {
         var transition = funcify(to);
-        transition.cond = cond || function() { return true; };
-        this.getRule(from).to.push(transition);
+        transition.cond = cond || function () { return true; };
+        this.getRule(from).push(transition);
         return this;
-    }
+    };
 
-    grammar.repeat = function(from, axis, to, cond) {
+    // add a basic repeat rule (along axis)
+    Grammar.prototype.repeat = function (from, axis, to, cond) {
         to = funcify(to);
         this.rule(from, function(token) {
             var res = [];
@@ -84,7 +97,8 @@
         return this;
     };
 
-    grammar.split = function(from , axis, to, cond) {
+    // add a basic split rule (along axis)
+    Grammar.prototype.split = function (from , axis, to, cond) {
         this.rule(from, function(token) {
             var offset = 0;
             return to.reduce(function(stack, next) {
@@ -98,44 +112,45 @@
     };
 
     // set initial state
-    grammar.init = function() {
+    Grammar.prototype.init = function () {
         this._init = this.addState(function() { });
         return this._init;
     };
 
 
-    grammar.isNonTerminal = function(token) {
-        return this.getRule(token).to.length != 0;
+    Grammar.prototype.isTerminal = function (token) {
+        return this.getRule(token).length == 0;
     };
 
-    grammar.expandState = function(token) {
-        var transitions = this.getRule(token).to.filter(function(transition) {
+    Grammar.prototype.expandState = function (token, into) {
+        if (this.isTerminal(token)) {
+            into.push(token);
+            return;
+        }
+        var transitions = this.getRule(token).filter(function(transition) {
             return transition.cond(token);
         });
-        return transitions[randi(0, transitions.length)](token)
-            .map(function(succ, i, a) {
+        return randEl(transitions)(token)
+            .forEach(function(succ, i, a) {
                 var temp = succ(token);
                 temp.locator = i;
                 temp.splitCount = a.length;
-                return temp;
+                into.push(temp);
             });
     };
 
-    grammar.apply = function(root, callback) {
-        var state = root? root.slice(): [this._init()];
-        if(!state.some(this.isNonTerminal.bind(this)))
-            return;
-        state = state.reduce(function(state, token) {
-            this.isNonTerminal(token)?
-                state.push.apply(state, this.expandState(token)):
-                state.push(token);
-            return state;
-        }.bind(this), []);
-        callback(state);
-        setTimeout(this.apply.bind(this, state, callback), 0);
+    Grammar.prototype.apply = function(root, callback) {
+        var state = root || [this._init()];
+        var newState = [];
+        for (var i = 0; i < state.length; i++)
+            this.expandState(state[i], newState);
+        callback(newState);
+
+        if(!state.every(this.isTerminal.bind(this)))
+            setTimeout(this.apply.bind(this, newState, callback), 0);
     };
 
-
+    var grammar = new Grammar();
     grammar.init();
 
     if (typeof window != 'undefined')

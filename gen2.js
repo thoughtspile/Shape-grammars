@@ -132,7 +132,8 @@
             return state;
         }.bind(this), []);
         callback(state);
-        setTimeout(this.apply.bind(this, state, callback), 0);
+        console.log(9)
+        setTimeout(this.apply.bind(this, state, callback), 300);
     };
 
 

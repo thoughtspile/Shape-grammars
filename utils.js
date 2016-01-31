@@ -8,6 +8,10 @@ function randi(min, max) {
     return min + Math.floor((max - min) * Math.random());
 }
 
+function randEl(arr) {
+    return arr[randi(0, arr.length)];
+}
+
 function randClr(rspan, gspan, bspan, aspan) {
     var args = Array.prototype.slice.call(arguments);
     args.length = 4;
@@ -27,4 +31,8 @@ function objFill(from) {
         else
             this[key] = from[key];
     return this;
+}
+
+function funcify(cand) {
+    return cand instanceof Function? cand: function() { return cand; };
 }

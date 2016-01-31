@@ -12,19 +12,18 @@
     <script src = gen.js></script>
     <script src = canvas-render.js></script>
     <script>
-        var canvas = document.getElementById('canvas');
-        setupCanvas(canvas);
-
         // descriptions
         var shadow = gen.addState(function() {
             this.color = 'rgba(0,0,0,.4)';
         });
-        var distr = gen.addState().resize(canvas.width, canvas.height);
-        var lot = gen.addState().resize(30, 100);
+        var distr = gen.addState();
+        var lot = gen.addState(function() {
+            this.color = this.color || randClr(null, null, null, .7);
+        }).resize(30, 100);
 
         var house = gen.addState(function() {
-            this.color = randClr(null, null, null, .7);
-        });
+            this.color = this.color || randClr(null, null, null, .7);
+        }).resize(30, 120);
         var floor = gen.addState().resize(30, 20);
         var wall = gen.addState().resize(30, 20);
         var door = gen.addState(function() {
@@ -41,6 +40,9 @@
         var vertFrame = gen.addState(function() {
             this.color = 'rgba(150, 140, 60, .7)';
         }).resize(1, 8).mv(3, 0);
+        var sill = gen.addState(function() {
+            this.color = 'rgba(240, 240, 240, .8)';
+        }).resize(9, 1).mv(-1, -1);
         var horzFrame = gen.addState(function() {
             this.color = 'rgba(150, 140, 60, .7)';
         }).resize(7, 1).mv(0, 4); // why no mv before resize
@@ -48,14 +50,21 @@
         var roof = gen.addState().resize(30, 15);
         var roofStruct = gen.addState().resize(30, 15);
         var roofTileRow = gen.addState()
-        var roofTile = gen.addState(function() {
-            this.color = randClr(200, [80, 180], 0, 1);
+        var roofTile = gen.addState(function(parent) {
+            var hash = parent.color.split('').reduce(function(a, c) {
+                return a + c.charCodeAt(0);
+            }, '')
+            this.color = randClr(180 + hash % 47, [80, 180], hash % 17, 1);
         }).resize(2, 2);
 
         var street = gen.addState(function() {
             this.color = 'gray';
         }).resize(30, 1);
-        var tree = gen.addState().mv(15, 0);
+        var park = gen.addState().resize(90, 40);
+        var grass = gen.addState(function() {
+            this.color = randClr(40, [100, 200], 0, .7);
+        }).resize(30, 1);
+        var tree = gen.addState();
         var trunk = gen.addState(function() {
             this.color = 'rgb(130, 70, 0)';
         }).mv(-2, 0).resize(4, 20);
@@ -65,36 +74,65 @@
         }).resize(3, 3);
 
         // grammar
-        gen.addRule(gen._init, [distr])
-            .repeat(distr, 0, [lot])
-            .addRule(lot, [house])
-            .addRule(lot, [street, tree])
-            .split(house, 1, [floor, floor, floor, roof])
-            .split(house, 1, [floor, floor, roof])
-            .addRule(floor, [wall, win.mv(5, 6), win.mv(18, 6)])
-            .addRule(floor, [wall, win.mv(5, 6), door.mv(18, 0), shopShade], function(floor) {
+        gen.repeat(distr, 0, function() {
+                return [lot.resize(30 * randi(1, 4), 20 * randi(2, 10))];
+            })
+            .repeat(lot, 0, function(loth) {
+                return [street, house.resize(30, loth.scope.size[1]), tree];
+            })
+            .repeat(house, 1, [floor])
+            .rule(floor, [wall, win.mv(4, 6), win.mv(19, 6)], function(floor) {
+                return floor.locator < floor.splitCount - 1;
+            })
+            .rule(floor, [wall, win.mv(4, 6), door.mv(19, 0), shopShade], function(floor) {
                 return floor.locator == 0;
             })
-            .addRule(win, [
+            .rule(floor, [wall, win.mv(19, 6), door.mv(4, 0), shopShade], function(floor) {
+                return floor.locator == 0;
+            })
+            .rule(floor, [roof], function(floor) {
+                return floor.locator >= floor.splitCount - 1;
+            })
+            .rule(win, [
                 shadow.resize(7, 2).mv(0, 6),
                 winGlass,
                 horzFrame,
-                vertFrame])
-            .addRule(roof, [shadow.resize(30, 2).mv(0, -2), roofStruct])
+                vertFrame,
+                sill])
+            .rule(roof, [shadow.resize(30, 2).mv(0, -2), roofStruct])
             .repeat(roofStruct, 1, [roofTileRow.resize(32, 2).mv(-1, 1)])
-            .addRule(roofStruct, rep(10, roofTileRow).map(function(row, i) {
+            .rule(roofStruct, rep(10, roofTileRow).map(function(row, i) {
                 return row.resize(32 - 2 * i, 2).mv(i - 1, i);
             }))
-            .addRule(roofStruct, [roofTileRow.resize(34, 2).mv(-2, 0)])
+            .rule(roofStruct, [roofTileRow.resize(34, 2).mv(-2, 0)])
             .repeat(roofTileRow, 0, [roofTile])
-            .addRule(tree, [trunk, crown, crown, crown])
+            .rule(tree, [trunk, crown])
+            .rule(tree, [tree.mv(randi(-10, 0), 0)])
 
-        for (var i = 0; i < 10; i++)
-            gen.addRule(crown, rep(40, leaf).map(function(leaf) {
+        var crownLayers = [];
+        for (var i = 0; i < 10; i++) {
+            var crownLayer = gen.addState();
+            gen.rule(crownLayer, rep(50, leaf).map(function(leaf) {
                 return leaf.mv(randi(-12, 12), randi(-10, 15));
-            })).addRule(crown, [crown.mv(randi(-3, 3), randi(-3, 3))])
+            }));
+            crownLayers.push(crownLayer.mv(randi(-3, 3), randi(-3, 3)));
+        }
 
-        function run() { render(canvas, gen.apply()); };
+        for (var i = 0; i < 100; i++) {
+            gen.rule(crown, [
+                crownLayers[randi(0, 10)],
+                crownLayers[randi(0, 10)],
+                crownLayers[randi(0, 10)]
+            ]);
+        }
+    </script>
+    <script>
+        var canvas = document.getElementById('canvas');
+        setupCanvas(canvas);
+        gen.rule(gen._init, [distr.resize(canvas.width, canvas.height)]);
+        function run() {
+            gen.apply(null, render.bind(null, canvas));
+        };
         document.getElementById('runBtn').addEventListener('click', run);
         run();
     </script>

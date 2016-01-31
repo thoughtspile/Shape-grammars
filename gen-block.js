@@ -13,7 +13,10 @@
         var h2 = randi(20, 30);
         var tile1 = mkTile(randi(100, 150), axis, w, randi(20, 30));
         var tile2 = mkTile(randi(100, 150), axis - h2, w, h2);
-        return {tiles: [tile1, tile2], corners: []};
+        return {
+            tiles: [tile1, tile2],
+            corners: []
+        };
     }
 
     function tile(count) {
