@@ -3,6 +3,8 @@
 
     var gen = grammar();
     window.gen = gen;
+    var model = {};
+    window.model = model;
 
     // descriptions
     var shadow = gen.addState(function () {
@@ -66,11 +68,24 @@
     }).resize(3, 3);
 
     // grammar
+    model.low = 2;
+    model.high = 10;
+    model.facLow = 1;
+    model.facHigh = 4
+    model.floorHeight = 20;
+    model.blockWidth = 30;
     gen.repeat(distr, 0, function () {
-            return [lot.resize(30 * randi(1, 4), 20 * randi(2, 10))];
+            return [
+                lot.resize(model.blockWidth * randi(model.facLow, model.facHigh),
+                model.floorHeight * randi(model.low, model.high))
+            ];
         })
         .repeat(lot, 0, function (loth) {
-            return [street, house.resize(30, loth.scope.size[1]), tree];
+            return [
+                street,
+                house.resize(model.blockWidth, loth.scope.size[1]),
+                tree
+            ];
         })
         .repeat(house, 1, [floor])
         .rule(floor, [wall, win.mv(4, 6), win.mv(19, 6)], function (floor) {
