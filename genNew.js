@@ -1,7 +1,10 @@
 (function () {
     'use strict';
 
-    function StateFactory(blueprint, id) {
+    function stateFactory(blueprint, id) {
+        if (!(blueprint instanceof Function)) {
+            blueprint = objFill.bind(null, blueprint);
+        }
         var factory = function (parent) {
             parent = parent || { scope: { pos: [0, 0] } };
             var obj = Object.assign({}, parent);
@@ -22,30 +25,33 @@
         factory.size = [1, 1];
         factory.isFactory = true;
 
-        for (var method in StateFactory.mixin)
-            factory[method] = StateFactory.mixin[method];
+        for (var method in stateFactory.mixin)
+            factory[method] = stateFactory.mixin[method];
 
         return factory;
     }
 
-    StateFactory.mixin = {
-        mv: function (x, y) {
-            var altFactory = stateFactory(this.blueprint, this.id);
-            altFactory.translation[0] = this.translation[0] + x;
-            altFactory.translation[1] = this.translation[0] + y;
-            altFactory.size[0] = this.size[0];
-            altFactory.size[1] = this.size[1];
-            return altFactory;
+    stateFactory.mixin = {
+        clone: function() {
+            var clone = stateFactory(this.blueprint, this.id);
+            clone.translation = this.translation.slice();
+            clone.size = this.size.slice();
+            return clone;
         },
-        resize: function (x, y) {
-            var altFactory = stateFactory(this.blueprint, this.id);
-            altFactory.translation[0] = this.translation[0];
-            altFactory.translation[1] = this.translation[0];
-            altFactory.size[0] = x;
-            altFactory.size[1] = y;
-            return altFactory;
+        mv: function (offset) {
+            var factory = this.clone();
+            offset.forEach(function(comp, i) {
+                factory.translation[i] += comp;
+            });
+            return factory;
+        },
+        resize: function (size) {
+            var factory = this.clone();
+            factory.size = size.slice();
+            return factory;
         }
     };
+
 
     function Grammar() {
         this.states = [];
@@ -54,14 +60,6 @@
         return this;
     };
 
-    window.Grammar = Grammar;
-
-    function stateFactory(blueprint, id) {
-        if (!(blueprint instanceof Function)) {
-            blueprint = objFill.bind(null, blueprint);
-        }
-        return StateFactory(blueprint, id);
-    }
 
     // wrap, push, return key
     Grammar.prototype.addState = function (blueprint) {
@@ -103,8 +101,8 @@
                 offset += to(token).reduce(function(max, nextItem) {
                     var x = axis == 0? offset: 0;
                     var y = axis == 1? offset: 0;
-                    var item = nextItem.mv(x, y)(token);
-                    res.push(nextItem.mv(x, y));
+                    var item = nextItem.mv([x, y])(token);
+                    res.push(nextItem.mv([x, y]));
                     return Math.max(max, item.scope.size[axis]);
                 }, 0);
             }
@@ -121,7 +119,7 @@
                 var x = axis == 0? offset: 0;
                 var y = axis == 1? offset: 0;
                 offset += next(token).scope.size[axis];
-                return stack.concat(next.mv(x, y));
+                return stack.concat(next.mv([x, y]));
             }, []);
         }, cond);
         return this;

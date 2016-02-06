@@ -29,7 +29,7 @@
     });
 
     setupCanvas(canvas);
-    gen.init(gen.init().resize(canvas.width, canvas.height));
+    gen.init(gen.init().resize([canvas.width, canvas.height]));
     function run() {
         gen.apply(null, render.bind(null, canvas));
     };
