@@ -1,25 +1,7 @@
 (function () {
     'use strict';
 
-    function Factory() {
-    }
-
-    var factoryMixin = {
-    };
-
-    function Grammar() {
-        this.states = [];
-        this.counter = 0;
-        this.init(this.addState());
-        return this;
-    };
-
-    window.Grammar = Grammar;
-
-    function stateFactory(blueprint, id) {
-        if (!(blueprint instanceof Function)) {
-            blueprint = objFill.bind(null, blueprint);
-        }
+    function StateFactory(blueprint, id) {
         var factory = function (parent) {
             parent = parent || { scope: { pos: [0, 0] } };
             var obj = Object.assign({}, parent);
@@ -35,26 +17,50 @@
             return obj;
         };
         factory.id = id;
+        factory.blueprint = blueprint;
         factory.translation = [0, 0];
         factory.size = [1, 1];
-        factory.mv = function (x, y) {
-            var altFactory = stateFactory(blueprint, id);
-            altFactory.translation[0] = factory.translation[0] + x;
-            altFactory.translation[1] = factory.translation[0] + y;
-            altFactory.size[0] = factory.size[0];
-            altFactory.size[1] = factory.size[1];
+        factory.isFactory = true;
+
+        for (var method in StateFactory.mixin)
+            factory[method] = StateFactory.mixin[method];
+
+        return factory;
+    }
+
+    StateFactory.mixin = {
+        mv: function (x, y) {
+            var altFactory = stateFactory(this.blueprint, this.id);
+            altFactory.translation[0] = this.translation[0] + x;
+            altFactory.translation[1] = this.translation[0] + y;
+            altFactory.size[0] = this.size[0];
+            altFactory.size[1] = this.size[1];
             return altFactory;
-        };
-        factory.resize = function (x, y) {
-            var altFactory = stateFactory(blueprint, id);
-            altFactory.translation[0] = factory.translation[0];
-            altFactory.translation[1] = factory.translation[0];
+        },
+        resize: function (x, y) {
+            var altFactory = stateFactory(this.blueprint, this.id);
+            altFactory.translation[0] = this.translation[0];
+            altFactory.translation[1] = this.translation[0];
             altFactory.size[0] = x;
             altFactory.size[1] = y;
             return altFactory;
-        };
-        factory.isFactory = true;
-        return factory;
+        }
+    };
+
+    function Grammar() {
+        this.states = [];
+        this.counter = 0;
+        this.init(this.addState());
+        return this;
+    };
+
+    window.Grammar = Grammar;
+
+    function stateFactory(blueprint, id) {
+        if (!(blueprint instanceof Function)) {
+            blueprint = objFill.bind(null, blueprint);
+        }
+        return StateFactory(blueprint, id);
     }
 
     // wrap, push, return key
@@ -121,7 +127,7 @@
         return this;
     };
 
-    // set initial state
+    // initial state accessor
     Grammar.prototype.init = function (init) {
         if (init)
             this._init = this.addState(init);
