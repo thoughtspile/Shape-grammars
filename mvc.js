@@ -4,7 +4,6 @@
     var inputs = {};
 
     function fetchSettings() {
-        console.log(inputs)
         Object.keys(model).forEach(function(key) {
             if (key == 'set')
                 return;
@@ -30,7 +29,7 @@
     });
 
     setupCanvas(canvas);
-    gen.rule(gen._init, [distr.resize(canvas.width, canvas.height)]);
+    gen.init(gen.init().resize(canvas.width, canvas.height));
     function run() {
         gen.apply(null, render.bind(null, canvas));
     };

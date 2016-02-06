@@ -10,7 +10,6 @@
     var shadow = gen.addState(function () {
         this.color = 'rgba(0,0,0,.4)';
     });
-    var distr = gen.addState();
     var lot = gen.addState(function () {
         this.color = this.color || randClr(null, null, null, .7);
     }).resize(30, 100);
@@ -74,7 +73,7 @@
     model.facHigh = 4
     model.floorHeight = 20;
     model.blockWidth = 30;
-    gen.repeat(distr, 0, function () {
+    gen.repeat(gen.init(), 0, function () {
             return [
                 lot.resize(model.blockWidth * randi(model.facLow, model.facHigh),
                 model.floorHeight * randi(model.low, model.high))
@@ -132,6 +131,4 @@
             crownLayers[randi(0, 10)]
         ]);
     }
-
-    window.distr = distr;
 }());

@@ -1,10 +1,16 @@
 (function () {
     'use strict';
 
+    function Factory() {
+    }
+
+    var factoryMixin = {
+    };
+
     function Grammar() {
         this.states = [];
         this.counter = 0;
-        this.init();
+        this.init(this.addState());
         return this;
     };
 
@@ -47,13 +53,16 @@
             altFactory.size[1] = y;
             return altFactory;
         };
+        factory.isFactory = true;
         return factory;
     }
 
     // wrap, push, return key
     Grammar.prototype.addState = function (blueprint) {
         blueprint = blueprint || function () {};
-        var factory = stateFactory(blueprint, this.counter);
+        var factory = blueprint.isFactory
+            ? blueprint
+            : stateFactory(blueprint, this.counter);
         this.counter++;
         this.states.push({
             from: factory,
@@ -113,8 +122,9 @@
     };
 
     // set initial state
-    Grammar.prototype.init = function () {
-        this._init = this.addState(function() { });
+    Grammar.prototype.init = function (init) {
+        if (init)
+            this._init = this.addState(init);
         return this._init;
     };
 
