@@ -41,7 +41,6 @@
 
     // apply a random rule from token "token", push to "into" array
     Grammar.prototype.expandState = function (token, into) {
-        // console.log(token)
         if (this.isTerminal(token)) {
             into.push(token);
             return into;
@@ -50,8 +49,7 @@
             .filter(function(transition) {
                 return transition.cond(token);
             });
-        // console.log(transitions[0](token))
-        randEl(transitions).make(token)
+        randEl(transitions)(token)
             .forEach(function(child, i, a) {
                 child.locator = i;
                 child.splitCount = a.length;
@@ -67,13 +65,9 @@
     Grammar.prototype.rule = function (from, to, cond) {
         to = funcify(to);
         var transition = function(parent) {
-            var factories = to(parent);
-            return factories.map(function(factory) {
-                if (StateFactory.isFactory(facory))
-                    return factory.make(parent);
-                else
-                    return factory;
-            })
+            return to(parent).map(function(factory) {
+                return factory.make(parent)
+            });
         };
         transition.cond = cond || function () { return true; };
         this.getRule(from).push(transition);
@@ -120,7 +114,7 @@
 
     // run grammar
     Grammar.prototype.apply = function(callback, root) {
-        var state = root || [this.init()];
+        var state = root || [this.init().make()];
         // console.log(state)
         var newState = [];
         for (var i = 0; i < state.length; i++)

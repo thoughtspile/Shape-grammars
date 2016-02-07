@@ -16,6 +16,7 @@
             this.trace = (parent.trace || []).concat([parent.id]);
         });
         gen.rule(rectPrev, function(parent) {
+            console.log(parent)
             var offset = parent.scope.size.map(x => x / 2);
             return [
                 rect,

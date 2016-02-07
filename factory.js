@@ -1,14 +1,9 @@
 (function() {
 
     function Factory(blueprint, id) {
-        token.call(this);
-
         this.id = id;
         this.blueprint = blueprint;
     }
-
-    Factory.prototype = token();
-
 
     Factory.isFactory = function(obj) {
         return obj instanceof Factory;
@@ -17,13 +12,8 @@
 
     Factory.prototype.make = function(parent) {
         parent = parent || token();
-        // inherit
-        var obj = Object.assign(token(), parent);
 
-        obj.scope.pos = this.translation.map(function(comp, i) {
-            return comp + parent.scope.pos[i];
-        });
-        obj.scope.size = this.size.slice();
+        var obj = token(parent);
         obj.id = this.id;
         this.blueprint.call(obj, parent);
 
@@ -32,29 +22,31 @@
 
     Factory.prototype.mv = function (offset) {
         offset = offset.slice();
+
         var _blueprint = this.blueprint;
         var mvBlueprint = function(parent) {
             _blueprint.call(this, parent);
             this.mv(offset);
         };
-        var factory = stateFactory(mvBlueprint, this.id);
-        return factory;
+
+        return stateFactory(mvBlueprint, this.id);
     };
 
     Factory.prototype.resize = function (size) {
         size = size.slice();
+
         var _blueprint = this.blueprint;
         var resizeBlueprint = function(parent) {
             _blueprint.call(this, parent);
-            this.resize(offset);
+            this.resize(size);
         };
-        var factory = stateFactory(resizeBlueprint, this.id);
-        return factory;
+
+        return stateFactory(resizeBlueprint, this.id);
     };
 
 
     function factory(blueprint, id) {
-        return this !== window
+        return this instanceof Factory
             ? Factory.call(this, blueprint, id)
             : new Factory(blueprint, id);
     }

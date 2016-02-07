@@ -1,8 +1,16 @@
 (function() {
     function Token(parent) {
-        this.scope = {
-            pos: [0, 0],
-            size: [1, 1]
+        if (parent) {
+            Object.assign(this, parent);
+            this.scope = {
+                pos: parent.scope.pos.slice(),
+                size: parent.scope.size.slice()
+            }
+        } else {
+            this.scope = {
+                pos: [0, 0],
+                size: [1, 1]
+            };
         }
     }
 
@@ -22,7 +30,7 @@
     };
 
     function token(parent) {
-        return this !== window
+        return this instanceof Token
             ? Token.call(this, parent)
             : new Token(parent);
     }
