@@ -1,22 +1,48 @@
 (function () {
     'use strict';
 
-    function stateFactory(blueprint, id) {
-        if (!(blueprint instanceof Function)) {
-            blueprint = objFill.bind(null, blueprint);
+    function Token(parent) {
+        this.scope = {
+            pos: [0, 0],
+            size: [1, 1]
         }
+    }
+
+    var tokenMixin = {
+        mv: function(offset) {
+            // console.log(this.scope.pos[0], offset[0])
+            var _this = this;
+            offset.forEach(function(comp, i) {
+                _this.scope.pos[i] += comp;
+            });
+            // console.log(this.scope.pos[0])
+            return this;
+        },
+        resize: function(size) {
+            this.scope.size = size.slice();
+            return this;
+        }
+    }
+
+
+    function stateFactory(blueprint, id) {
+        // console.log(facs++)
         var factory = function (parent) {
             parent = parent || { scope: { pos: [0, 0] } };
+            // inherit
             var obj = Object.assign({}, parent);
-            blueprint.call(obj, parent);
-            obj.id = id;
+            for (var method in tokenMixin)
+                obj[method] = tokenMixin[method];
+
             obj.scope = {
-                pos: [
-                    parent.scope.pos[0] + factory.translation[0],
-                    parent.scope.pos[1] + factory.translation[1]
-                ],
-                size: [factory.size[0], factory.size[1]]
+                pos: factory.translation.map(function(comp, i) {
+                    return comp + parent.scope.pos[i];
+                }),
+                size: factory.size.slice()
             };
+            obj.id = id;
+            blueprint.call(obj, parent);
+
             return obj;
         };
         factory.id = id;
@@ -39,10 +65,17 @@
             return clone;
         },
         mv: function (offset) {
-            var factory = this.clone();
-            offset.forEach(function(comp, i) {
-                factory.translation[i] += comp;
-            });
+            offset = offset.slice();
+            var _this = this;
+            var mvBlueprint = function(parent) {
+                // console.log(this)
+                _this.blueprint.call(this, parent);
+                this.mv(offset);
+            };
+            var factory = stateFactory(mvBlueprint, this.id);
+            // offset.forEach(function(comp, i) {
+            //     factory.translation[i] += comp;
+            // });
             return factory;
         },
         resize: function (size) {
@@ -53,6 +86,7 @@
     };
 
 
+
     function Grammar() {
         this.states = [];
         this.counter = 0;
@@ -60,6 +94,8 @@
         return this;
     };
 
+
+    // *** utility methods ***
 
     // wrap, push, return key
     Grammar.prototype.addState = function (blueprint) {
@@ -83,9 +119,47 @@
         return this.getRule(this.addState(state));
     };
 
+    // boolean
+    Grammar.prototype.isTerminal = function (token) {
+        return this.getRule(token).length == 0;
+    };
+
+    // apply a random rule from token "token", push to "into" array
+    Grammar.prototype.expandState = function (token, into) {
+        // console.log(token)
+        if (this.isTerminal(token)) {
+            into.push(token);
+            return into;
+        }
+        var transitions = this.getRule(token)
+            .filter(function(transition) {
+                return transition.cond(token);
+            });
+        // console.log(transitions[0](token))
+        randEl(transitions)(token)
+            .forEach(function(child, i, a) {
+                child.locator = i;
+                child.splitCount = a.length;
+                into.push(child);
+            });
+        return into;
+    };
+
+
+    // *** interface ***
+
     // wrap, push to rule, return self
     Grammar.prototype.rule = function (from, to, cond) {
-        var transition = funcify(to);
+        to = funcify(to);
+        var transition = function(parent) {
+            var factories = to(parent);
+            return factories.map(function(factory) {
+                if (factory.isFactory)
+                    return factory(parent);
+                else
+                    return factory;
+            })
+        };
         transition.cond = cond || function () { return true; };
         this.getRule(from).push(transition);
         return this;
@@ -96,15 +170,13 @@
         to = funcify(to);
         this.rule(from, function(token) {
             var res = [];
-            var offset = 0;
-            while (offset < token.scope.size[axis]) {
-                offset += to(token).reduce(function(max, nextItem) {
-                    var x = axis == 0? offset: 0;
-                    var y = axis == 1? offset: 0;
-                    var item = nextItem.mv([x, y])(token);
-                    res.push(nextItem.mv([x, y]));
-                    return Math.max(max, item.scope.size[axis]);
-                }, 0);
+            var offset = [0, 0];
+            while (offset[axis] < token.scope.size[axis]) {
+                to(token).forEach(function(factory) {
+                    var item = factory(token).mv(offset);
+                    res.push(factory.mv(offset));
+                    offset[axis] += item.scope.size[axis];
+                });
             }
             return res;
         }, cond);
@@ -132,37 +204,19 @@
         return this._init;
     };
 
-
-    Grammar.prototype.isTerminal = function (token) {
-        return this.getRule(token).length == 0;
-    };
-
-    Grammar.prototype.expandState = function (token, into) {
-        if (this.isTerminal(token)) {
-            into.push(token);
-            return;
-        }
-        var transitions = this.getRule(token).filter(function(transition) {
-            return transition.cond(token);
-        });
-        return randEl(transitions)(token)
-            .forEach(function(succ, i, a) {
-                var temp = succ(token);
-                temp.locator = i;
-                temp.splitCount = a.length;
-                into.push(temp);
-            });
-    };
-
-    Grammar.prototype.apply = function(root, callback) {
+    // run grammar
+    Grammar.prototype.apply = function(callback, root) {
         var state = root || [this._init()];
+        // console.log(state)
         var newState = [];
         for (var i = 0; i < state.length; i++)
             this.expandState(state[i], newState);
+        console.log(newState)
         callback(newState);
+        console.log(900)
 
         if(!state.every(this.isTerminal.bind(this)))
-            setTimeout(this.apply.bind(this, newState, callback), 0);
+            setTimeout(this.apply.bind(this, callback, newState), 0);
     };
 
 

@@ -31,7 +31,7 @@
     setupCanvas(canvas);
     gen.init(gen.init().resize([canvas.width, canvas.height]));
     function run() {
-        gen.apply(null, render.bind(null, canvas));
+        gen.apply(render.bind(null, canvas));
     };
     document.getElementById('runBtn').addEventListener('click', run);
     run();
