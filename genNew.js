@@ -1,29 +1,7 @@
 (function () {
     'use strict';
 
-    function Token(parent) {
-        this.scope = {
-            pos: [0, 0],
-            size: [1, 1]
-        }
-    }
-
-    var tokenMixin = {
-        mv: function(offset) {
-            // console.log(this.scope.pos[0], offset[0])
-            var _this = this;
-            offset.forEach(function(comp, i) {
-                _this.scope.pos[i] += comp;
-            });
-            // console.log(this.scope.pos[0])
-            return this;
-        },
-        resize: function(size) {
-            this.scope.size = size.slice();
-            return this;
-        }
-    }
-
+    var tokenMixin = token().__proto__;
 
     function stateFactory(blueprint, id) {
         // console.log(facs++)
