@@ -6,6 +6,7 @@
     var model = {};
     window.model = model;
 
+    gen.init(gen.init().resize([300, 300]));
     var rectPrev = gen.init();
 
     for (var i = 0; i < 5; i++) {

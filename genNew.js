@@ -1,69 +1,6 @@
 (function () {
     'use strict';
 
-    var tokenMixin = token().__proto__;
-
-    function stateFactory(blueprint, id) {
-        // console.log(facs++)
-        var factory = function (parent) {
-            parent = parent || { scope: { pos: [0, 0] } };
-            // inherit
-            var obj = Object.assign({}, parent);
-            for (var method in tokenMixin)
-                obj[method] = tokenMixin[method];
-
-            obj.scope = {
-                pos: factory.translation.map(function(comp, i) {
-                    return comp + parent.scope.pos[i];
-                }),
-                size: factory.size.slice()
-            };
-            obj.id = id;
-            blueprint.call(obj, parent);
-
-            return obj;
-        };
-        factory.id = id;
-        factory.blueprint = blueprint;
-        factory.translation = [0, 0];
-        factory.size = [1, 1];
-        factory.isFactory = true;
-
-        for (var method in stateFactory.mixin)
-            factory[method] = stateFactory.mixin[method];
-
-        return factory;
-    }
-
-    stateFactory.mixin = {
-        clone: function() {
-            var clone = stateFactory(this.blueprint, this.id);
-            clone.translation = this.translation.slice();
-            clone.size = this.size.slice();
-            return clone;
-        },
-        mv: function (offset) {
-            offset = offset.slice();
-            var _this = this;
-            var mvBlueprint = function(parent) {
-                // console.log(this)
-                _this.blueprint.call(this, parent);
-                this.mv(offset);
-            };
-            var factory = stateFactory(mvBlueprint, this.id);
-            // offset.forEach(function(comp, i) {
-            //     factory.translation[i] += comp;
-            // });
-            return factory;
-        },
-        resize: function (size) {
-            var factory = this.clone();
-            factory.size = size.slice();
-            return factory;
-        }
-    };
-
-
 
     function Grammar() {
         this.states = [];
@@ -78,7 +15,7 @@
     // wrap, push, return key
     Grammar.prototype.addState = function (blueprint) {
         blueprint = blueprint || function () {};
-        var factory = blueprint.isFactory
+        var factory = StateFactory.isFactory(blueprint)
             ? blueprint
             : stateFactory(blueprint, this.counter);
         this.counter++;
@@ -114,7 +51,7 @@
                 return transition.cond(token);
             });
         // console.log(transitions[0](token))
-        randEl(transitions)(token)
+        randEl(transitions).make(token)
             .forEach(function(child, i, a) {
                 child.locator = i;
                 child.splitCount = a.length;
@@ -132,8 +69,8 @@
         var transition = function(parent) {
             var factories = to(parent);
             return factories.map(function(factory) {
-                if (factory.isFactory)
-                    return factory(parent);
+                if (StateFactory.isFactory(facory))
+                    return factory.make(parent);
                 else
                     return factory;
             })
@@ -177,14 +114,13 @@
 
     // initial state accessor
     Grammar.prototype.init = function (init) {
-        if (init)
-            this._init = this.addState(init);
+        if (init) this._init = this.addState(init);
         return this._init;
     };
 
     // run grammar
     Grammar.prototype.apply = function(callback, root) {
-        var state = root || [this._init()];
+        var state = root || [this.init()];
         // console.log(state)
         var newState = [];
         for (var i = 0; i < state.length; i++)

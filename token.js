@@ -22,7 +22,9 @@
     };
 
     function token(parent) {
-        return new Token(parent);
+        return this !== window
+            ? Token.call(this, parent)
+            : new Token(parent);
     }
 
     window.token = token;
