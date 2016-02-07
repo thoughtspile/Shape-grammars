@@ -1,4 +1,5 @@
 (function() {
+    'use strict'
 
     function Factory(blueprint, id) {
         this.id = id;

@@ -1,7 +1,6 @@
 (function () {
     'use strict';
 
-
     function Grammar() {
         this.states = [];
         this.counter = 0;
@@ -41,14 +40,14 @@
 
     // apply a random rule from token "token", push to "into" array
     Grammar.prototype.expandState = function (token, into) {
-        if (this.isTerminal(token)) {
-            into.push(token);
-            return into;
-        }
         var transitions = this.getRule(token)
             .filter(function(transition) {
                 return transition.cond(token);
             });
+        if (transitions.length == 0) {
+            into.push(token);
+            return into;
+        }
         randEl(transitions)(token)
             .forEach(function(child, i, a) {
                 child.locator = i;
@@ -114,17 +113,18 @@
 
     // run grammar
     Grammar.prototype.apply = function(callback, root) {
+        if (!window.timer)
+            window.timer = Date.now();
         var state = root || [this.init().make()];
-        // console.log(state)
         var newState = [];
         for (var i = 0; i < state.length; i++)
             this.expandState(state[i], newState);
-        console.log(newState)
         callback(newState);
-        console.log(900)
 
         if(!state.every(this.isTerminal.bind(this)))
             setTimeout(this.apply.bind(this, callback, newState), 0);
+        else
+            console.log(Date.now() - window.timer)
     };
 
 

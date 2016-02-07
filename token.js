@@ -1,4 +1,6 @@
 (function() {
+    'use strict'
+
     function Token(parent) {
         if (parent) {
             Object.assign(this, parent);
@@ -15,12 +17,10 @@
     }
 
     Token.prototype.mv = function(offset) {
-        // console.log(this.scope.pos[0], offset[0])
         var _this = this;
         offset.forEach(function(comp, i) {
             _this.scope.pos[i] += comp;
         });
-        // console.log(this.scope.pos[0])
         return this;
     };
 

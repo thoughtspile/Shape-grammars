@@ -9,14 +9,13 @@
     gen.init(gen.init().resize([300, 300]));
     var rectPrev = gen.init();
 
-    for (var i = 0; i < 5; i++) {
+    [0,1,2,3,4,5].forEach(function() {
         var rect = gen.addState(function(parent) {
             this.scope.size = parent.scope.size.map(x => x / 2);
             this.color = randClr(null, null, null, 1);
             this.trace = (parent.trace || []).concat([parent.id]);
         });
         gen.rule(rectPrev, function(parent) {
-            console.log(parent)
             var offset = parent.scope.size.map(x => x / 2);
             return [
                 rect,
@@ -26,5 +25,5 @@
             ]
         });
         rectPrev = rect;
-    }
+    });
 }());
