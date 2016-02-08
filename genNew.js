@@ -49,9 +49,7 @@
             return into;
         }
         randEl(transitions)(token)
-            .forEach(function(child, i, a) {
-                child.locator = i;
-                child.splitCount = a.length;
+            .forEach(function(child) {
                 into.push(child);
             });
         return into;
@@ -64,8 +62,8 @@
     Grammar.prototype.rule = function (from, to, cond) {
         to = funcify(to);
         var transition = function(parent) {
-            return to(parent).map(function(factory) {
-                return factory.make(parent)
+            return to(parent).map(function(factory, i, a) {
+                return factory.make(parent, i, a.length);
             });
         };
         transition.cond = cond || function () { return true; };

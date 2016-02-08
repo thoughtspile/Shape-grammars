@@ -6,26 +6,32 @@
     var model = {};
     window.model = model;
 
-    gen.init(gen.init().resize([300, 300]));
-    var rectPrev = gen.init();
 
-    [0,1,2].forEach(function() {
+    var rectPrev = null;
+    [0,1,2,3].forEach(function(i) {
         var rect = gen.addState(function(parent) {
             this.color = randClr(null, null, null, 1);
+            this.ratio = Math.random();
+
+            var ratio = parent.ratio || 0;
+            var size = parent.scope.size;
+            var loc = this.locator;
+            var left = (loc < 2);
+            var bottom = (loc % 2 == 0);
+            this.mv([
+                left? 0: ratio * size[0],
+                bottom? 0: ratio * size[1]
+            ]);
+            this.resize([
+                size[0] * (left? ratio: 1 - ratio),
+                size[1] * (bottom? ratio: 1 - ratio)
+            ]);
         });
-        gen.rule(rectPrev, function(parent) {
-            var size = parent.scope.size.slice();
-            var ratio = Math.random();
-            return [
-                rect.resize([size[0] * ratio, size[1] * ratio]),
-                rect.mv([0, ratio * size[1]])
-                    .resize([size[0] * ratio, size[1] * (1 - ratio)]),
-                rect.mv([ratio * size[0], 0])
-                    .resize([size[0] * (1 - ratio), size[1] * ratio]),
-                rect.mv([ratio * size[0], ratio * size[1]])
-                    .resize([size[0] * (1 - ratio), size[1] * (1 - ratio)])
-            ]
-        });
+
+        if (i == 0)
+            gen.init(rect.resize([300, 300]))
+        else
+            gen.rule(rectPrev, [rect, rect, rect, rect]);
         rectPrev = rect;
     });
 }());

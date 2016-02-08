@@ -11,11 +11,13 @@
     };
 
 
-    Factory.prototype.make = function(parent) {
+    Factory.prototype.make = function(parent, locator, splitCount) {
         parent = parent || token();
 
         var obj = token(parent);
         obj.id = this.id;
+        obj.locator = locator;
+        obj.splitCount = splitCount;
         this.blueprint.call(obj, parent);
 
         return obj;
