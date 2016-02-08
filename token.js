@@ -3,7 +3,9 @@
 
     function Token(parent) {
         if (parent) {
-            Object.assign(this, parent);
+            for (var key in parent)
+                if (!(key in this))
+                    this[key] = parent[key];
             this.scope = {
                 pos: parent.scope.pos.slice(),
                 size: parent.scope.size.slice()

@@ -34,8 +34,11 @@
     };
 
     // boolean
-    Grammar.prototype.isTerminal = function (token) {
-        return this.getRule(token).length == 0;
+    Grammar.prototype.isTerminal = function (token, parent) {
+        return this.getRule(token)
+            .every(function(transition) {
+                return !transition.cond(token);
+            });
     };
 
     // apply a random rule from token "token", push to "into" array
@@ -46,12 +49,9 @@
             });
         if (transitions.length == 0) {
             into.push(token);
-            return into;
+        } else {
+            into.push.apply(into, randEl(transitions)(token));
         }
-        randEl(transitions)(token)
-            .forEach(function(child) {
-                into.push(child);
-            });
         return into;
     };
 
