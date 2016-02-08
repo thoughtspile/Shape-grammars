@@ -115,14 +115,16 @@
             window.timer = Date.now();
         var state = root || [this.init().make()];
         var newState = [];
-        for (var i = 0; i < state.length; i++)
-            this.expandState(state[i], newState);
+        while (state.length > 0)
+            this.expandState(state.pop(), newState);
+        newState.push.apply(newState, state);
         callback(newState);
 
-        if(!state.every(this.isTerminal.bind(this)))
+        if(!newState.every(this.isTerminal.bind(this))) {
             setTimeout(this.apply.bind(this, callback, newState), 0);
-        else
+        } else {
             console.log(Date.now() - window.timer)
+        }
     };
 
 

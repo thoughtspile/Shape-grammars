@@ -24,6 +24,7 @@
         paramBlock.appendChild(block);
         input.value = model[key];
         input.type = 'number';
+        input.step = '.1';
         input.addEventListener('change', fetchSettings);
         inputs[key] = input;
     });

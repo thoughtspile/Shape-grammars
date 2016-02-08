@@ -21,7 +21,16 @@ function randClr(rspan, gspan, bspan, aspan) {
         .map(function(span, i) {
             return Array.isArray(span)? randi(span[0], span[1]): span;
         })
+        .map(function(x) { return Math.floor(x); })
         .join(', ') + ')';
+}
+
+function contract(range, decay) {
+    var pivot = range[0] + Math.random() * (range[1] - range[0]);
+    return [
+        (1 - decay) * range[0] + decay * pivot,
+        (1 - decay) * range[1] + decay * pivot
+    ];
 }
 
 function objFill(from) {
