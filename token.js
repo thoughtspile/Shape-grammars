@@ -36,7 +36,7 @@
     };
 
     Token.prototype.rotate = function(rot) {
-        this.scope.rot[0] += rot[0];
+        this.scope.rot[0] -= rot[0];
         return this;
     }
 

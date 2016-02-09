@@ -21,7 +21,7 @@ function randClr(rspan, gspan, bspan, aspan) {
         .map(function(span, i) {
             return Array.isArray(span)? randi(span[0], span[1]): span;
         })
-        .map(function(x) { return Math.floor(x); })
+        .map(function(x, i) { return i == 3? x: Math.floor(x); })
         .join(', ') + ')';
 }
 

@@ -19,15 +19,16 @@ var render = function(canvas, data) {
         target.fillStyle = state.color;
         target.save();
         target.translate(pos[0], canvasHeight - pos[1]);
+        target.scale(1, -1);
         target.rotate(rot);
         if (state.shape == 'triangle') {
         // if (false) {
             target.beginPath();
-            target.moveTo(0, -size[1]);
+            target.moveTo(0, size[1]);
             target.lineTo(size[0], 0);
             target.lineTo(0, 0);
         } else {
-            target.fillRect(0, -size[1], size[0], size[1]);
+            target.fillRect(0, 0, size[0], size[1]);
         }
         target.fill();
         target.restore();
