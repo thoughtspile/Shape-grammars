@@ -90,16 +90,33 @@
     };
 
     // add a basic split rule (along axis)
-    Grammar.prototype.split = function (from , axis, to, cond) {
-        this.rule(from, function(token) {
-            var offset = 0;
-            return to.reduce(function(stack, next) {
-                var x = axis == 0? offset: 0;
-                var y = axis == 1? offset: 0;
-                offset += next(token).scope.size[axis];
-                return stack.concat(next.mv([x, y]));
-            }, []);
-        }, cond);
+    Grammar.prototype.split = function (from, axis, sizes, to, cond) {
+        to = funcify(to);
+        var transition = function(parent) {
+            var offset = [0, 0];
+            var sumAbs = 0;
+            var sumRel = 0;
+            sizes.forEach(function(size) {
+                if (/r$/.test(size))
+                    sumRel += parseFloat(size, 10);
+                else
+                    sumAbs += size;
+            }, 0);
+            var contextSizes = sizes.map(function(size) {
+                return /r$/.test(size)
+                    ? parseFloat(size, 10) * (parent.scope.size[axis] - sumAbs) / sumRel
+                    : size;
+            });
+            return to(parent).map(function(factory, i, a) {
+                var temp = factory.make(parent, i, a.length);
+                temp.scope.size[axis] = contextSizes[i];
+                temp.mv(offset);
+                offset[axis] += contextSizes[i];
+                return temp;
+            });
+        };
+        transition.cond = cond || function () { return true; };
+        this.getRule(from).push(transition);
         return this;
     };
 
