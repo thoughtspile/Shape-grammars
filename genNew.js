@@ -79,6 +79,7 @@
             var res = [];
             var count = Math.round(parent.scope.size[axis] / size) || 1;
             var adjustedSize = parent.scope.size[axis] / count;
+            console.log(count)
             var factory = to(parent);
             for (var i = 0; i < count; i++) {
                 var temp = factory.make(parent, i, count);

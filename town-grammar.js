@@ -6,6 +6,8 @@
     var model = {};
     window.model = model;
 
+    gen.init(gen.init().resize([1000, 300]))
+
     // descriptions
     var shadow = gen.addState(function () {
         this.color = 'rgba(0,0,0,.4)';
@@ -16,12 +18,14 @@
 
     var house = gen.addState(function () {
         this.color = this.color || randClr(null, null, null, .7);
+        this.resize([this.scope.size[0], randi(model.facLow, model.facHigh) * model.floorHeight])
     }).resize([30, 120]);
     var floor = gen.addState().resize([30, 20]);
     var wall = gen.addState().resize([30, 20]);
     var door = gen.addState(function () {
         this.color = 'rgba(20, 20, 20, .7)';
-    }).resize([7, 14]);
+        this.resize([7, 14]);
+    });
     var shopShade =  gen.addState(function () {
         this.color = randClr(null, null, null, 1);
     }).resize([30, 7]).mv([0, 13]);
@@ -73,22 +77,9 @@
     model.facHigh = 4
     model.floorHeight = 20;
     model.blockWidth = 30;
-    gen.repeat(gen.init(), 0, function () {
-            return [
-                lot.resize([
-                    model.blockWidth * randi(model.facLow, model.facHigh),
-                    model.floorHeight * randi(model.low, model.high)
-                ])
-            ];
-        })
-        .repeat(lot, 0, function (loth) {
-            return [
-                street,
-                house.resize([model.blockWidth, loth.scope.size[1]]),
-                tree
-            ];
-        })
-        .repeat(house, 1, [floor])
+    gen.repeat(gen.init(), 0, model.blockWidth, lot)
+        .rule(lot, [street, house, tree])
+        .repeat(house, 1, model.floorHeight, floor)
         .rule(floor, [wall, win.mv([4, 6]), win.mv([19, 6])], function (floor) {
             return floor.locator < floor.splitCount - 1;
         })
@@ -108,12 +99,12 @@
             vertFrame,
             sill])
         .rule(roof, [shadow.resize([30, 2]).mv([0, -2]), roofStruct])
-        .repeat(roofStruct, 1, [roofTileRow.resize([32, 2]).mv([-1, 1])])
+        // .repeat(roofStruct, 1, [roofTileRow.resize([32, 2]).mv([-1, 1])])
         .rule(roofStruct, rep(10, roofTileRow).map(function (row, i) {
             return row.resize([32 - 2 * i, 2]).mv([i - 1, i]);
         }))
         .rule(roofStruct, [roofTileRow.resize([34, 2]).mv([-2, 0])])
-        .repeat(roofTileRow, 0, [roofTile])
+        .repeat(roofTileRow, 0, 2, roofTile)
         .rule(tree, [trunk, crown])
         .rule(tree, [tree.mv([randi(-10, 0), 0])])
 
