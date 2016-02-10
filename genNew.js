@@ -72,20 +72,25 @@
     };
 
     // add a basic repeat rule (along axis)
-    Grammar.prototype.repeat = function (from, axis, to, cond) {
+    Grammar.prototype.repeat = function (from, axis, size, to, cond) {
         to = funcify(to);
-        this.rule(from, function(token) {
-            var res = [];
+        var transition = function(parent) {
             var offset = [0, 0];
-            while (offset[axis] < token.scope.size[axis]) {
-                to(token).forEach(function(factory) {
-                    var item = factory(token).mv(offset);
-                    res.push(factory.mv(offset));
-                    offset[axis] += item.scope.size[axis];
-                });
-            }
+            var res = [];
+            var count = Math.round(parent.scope.size[axis] / size);
+            var adjustedSize = parent.scope.size[axis] / count;
+            var factory = to(parent);
+            for (var i = 0; i < count; i++) {
+                var temp = factory.make(parent, i, count);
+                temp.scope.size[axis] = adjustedSize;
+                temp.mv(offset);
+                offset[axis] += adjustedSize;
+                res.push(temp);
+            };
             return res;
-        }, cond);
+        };
+        transition.cond = cond || function () { return true; };
+        this.getRule(from).push(transition);
         return this;
     };
 
