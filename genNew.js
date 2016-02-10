@@ -77,7 +77,7 @@
         var transition = function(parent) {
             var offset = [0, 0];
             var res = [];
-            var count = Math.round(parent.scope.size[axis] / size);
+            var count = Math.round(parent.scope.size[axis] / size) || 1;
             var adjustedSize = parent.scope.size[axis] / count;
             var factory = to(parent);
             for (var i = 0; i < count; i++) {
