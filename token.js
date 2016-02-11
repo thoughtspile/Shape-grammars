@@ -2,36 +2,32 @@
     'use strict'
 
     function Token(parent) {
+        this.scope = {
+            pos: new Float32Array(2),
+            size: new Float32Array(2),
+            rot: new Float32Array(2)
+        }
         if (parent) {
             for (var key in parent)
                 if (!(key in this))
                     this[key] = parent[key];
-            this.scope = {
-                pos: parent.scope.pos.slice(),
-                size: parent.scope.size.slice(),
-                rot: parent.scope.rot.slice()
-            }
-        } else {
-            this.scope = {
-                pos: [0, 0],
-                size: [1, 1],
-                rot: [0]
-            };
+            for (var key in parent.scope)
+                this.scope[key].set(parent.scope[key])
         }
     }
 
-    Token.prototype.mv = function(offset) {
+    Token.prototype.mv = function(x0, x1) {
         // for (var i = 0; i < offset.length; i++)
         var cr = Math.cos(this.scope.rot[0]);
         var sr = Math.sin(this.scope.rot[0]);
-        this.scope.pos[0] += (cr * offset[0] - sr * offset[1]);
-        this.scope.pos[1] += (sr * offset[0] + cr * offset[1]);
+        this.scope.pos[0] += (cr * x0 - sr * x1);
+        this.scope.pos[1] += (sr * x0 + cr * x1);
         return this;
     };
 
-    Token.prototype.resize = function(size) {
-        for (var i = 0; i < size.length; i++)
-            this.scope.size[i] = size[i];
+    Token.prototype.resize = function(x0, x1) {
+        if (x0) this.scope.size[0] = x0;
+        if (x1) this.scope.size[1] = x1;
         return this;
     };
 

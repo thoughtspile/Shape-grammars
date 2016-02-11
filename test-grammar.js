@@ -8,7 +8,7 @@
 
     gen.init(gen.addState(function() {
         this.ratio = Math.random();
-        this.resize([300, 300]);
+        this.resize(300, 300);
         this.palette = [[0, 255], [0, 255], [0, 255]]
     }));
 
@@ -26,14 +26,14 @@
         var loc = this.locator;
         var left = (loc < 2);
         var bottom = (loc % 2 == 0);
-        this.mv([
+        this.mv(
             left? 0: ratio * size[0],
             bottom? 0: ratio * size[1]
-        ]);
-        this.resize([
+        );
+        this.resize(
             size[0] * (left? ratio: 1 - ratio),
             size[1] * (bottom? ratio: 1 - ratio)
-        ]);
+        );
     });
     var rectTerm = gen.addState();
 

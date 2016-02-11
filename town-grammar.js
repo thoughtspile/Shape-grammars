@@ -13,36 +13,40 @@
         this.color = 'rgba(0,0,0,.4)';
     });
     var lot = gen.addState(function () {
-        this.color = this.color || randClr(null, null, null, .7);
-    }).resize([30, 100]);
+        this.color = randClr(null, null, null, .7);
+        this.resize([30, 100]);
+    });
 
     var house = gen.addState(function () {
-        this.color = this.color || randClr(null, null, null, .7);
-        this.resize([this.scope.size[0], randi(model.facLow, model.facHigh) * model.floorHeight])
-    }).resize([30, 120]);
-    var floor = gen.addState().resize([30, 20]);
-    var wall = gen.addState().resize([30, 20]);
+        this.resize([this.scope.size[0], randi(model.low, model.high) * model.floorHeight]);
+        this.flHt = randi(14, 25);
+    });
+    var floors = gen.addState();
+    var floor = gen.addState();
+    var wall = gen.addState();
     var door = gen.addState(function () {
         this.color = 'rgba(20, 20, 20, .7)';
         this.resize([7, 14]);
     });
     var shopShade =  gen.addState(function () {
         this.color = randClr(null, null, null, 1);
-    }).resize([30, 7]).mv([0, 13]);
+        this.resize([30, 7]).mv([0, 13]);
+    });
 
-    var win = gen.addState().mv([0, 6]).resize([7, 8]);
+    var win = gen.addState();
+    var winRow = gen.addState();
     var winGlass = gen.addState(function () {
         this.color = randClr([20, 80], [40, 100], [20, 50], .8);
-    }).resize([7, 8]);
+    });
     var vertFrame = gen.addState(function () {
         this.color = 'rgba(150, 140, 60, .7)';
-    }).resize([1, 8]).mv([3, 0]);
+    }).resize([1, null]).mv([3, 0]);
     var sill = gen.addState(function () {
         this.color = 'rgba(240, 240, 240, .8)';
     }).resize([9, 1]).mv([-1, -1]);
     var horzFrame = gen.addState(function () {
         this.color = 'rgba(150, 140, 60, .7)';
-    }).resize([7, 1]).mv([0, 4]); // why no mv before resize
+    }).resize([null, 1]).mv([0, 4]);
 
     var roof = gen.addState().resize([30, 15]);
     var roofStruct = gen.addState().resize([30, 15]);
@@ -56,19 +60,12 @@
 
     var street = gen.addState(function () {
         this.color = 'gray';
-    }).resize([30, 1]);
-    var park = gen.addState().resize([90, 40]);
-    var grass = gen.addState(function () {
-        this.color = randClr(40, [100, 200], 0, .7);
-    }).resize([30, 1]);
-    var tree = gen.addState();
-    var trunk = gen.addState(function () {
-        this.color = 'rgb(130, 70, 0)';
-    }).mv([-2, 0]).resize([4, 20]);
-    var crown = gen.addState().mv([0, 20]);
-    var leaf = gen.addState(function () {
-        this.color = randClr(40, [100, 200], 0, .7);
-    }).resize([3, 3]);
+    }).resize([null, 1]);
+    var tree = gen.addState(function() {
+        this.color = 'black';
+        this.depth = 0;
+        this.resize([treeModel.init, treeModel.initL])
+    });
 
     // grammar
     model.low = 2;
@@ -78,19 +75,17 @@
     model.floorHeight = 20;
     model.blockWidth = 30;
     gen.repeat(gen.init(), 0, model.blockWidth, lot)
-        .rule(lot, [street, house, tree])
-        .repeat(house, 1, model.floorHeight, floor)
-        .rule(floor, [wall, win.mv([4, 6]), win.mv([19, 6])], function (floor) {
-            return floor.locator < floor.splitCount - 1;
-        })
-        .rule(floor, [wall, win.mv([4, 6]), door.mv([19, 0]), shopShade], function (floor) {
+        .rule(lot, [street, tree, house])
+        .split(house, 1, ['1r', 30], [floors, roof])
+        .repeat(floors, 1, p => p.flHt, floor)
+        .split(floor, 1, ['1r', 8, '.5r'], [wall, winRow, wall])
+        .split(winRow, 0, ['1r', 7, '1r', 7, '1r'], [wall, win, wall, win, wall])
+        // .rule(floor, [win.mv([4, 6]), win.mv([19, 6]), wall])
+        .rule(floor, [win.mv([4, 6]), door.mv([19, 0]), shopShade, wall], function (floor) {
             return floor.locator == 0;
         })
-        .rule(floor, [wall, win.mv([19, 6]), door.mv([4, 0]), shopShade], function (floor) {
+        .rule(floor, [win.mv([19, 6]), door.mv([4, 0]), wall], function (floor) {
             return floor.locator == 0;
-        })
-        .rule(floor, [roof], function (floor) {
-            return floor.locator >= floor.splitCount - 1;
         })
         .rule(win, [
             shadow.resize([7, 2]).mv([0, 6]),
@@ -98,30 +93,34 @@
             horzFrame,
             vertFrame,
             sill])
+
         .rule(roof, [shadow.resize([30, 2]).mv([0, -2]), roofStruct])
-        // .repeat(roofStruct, 1, [roofTileRow.resize([32, 2]).mv([-1, 1])])
+        .repeat(roofStruct, 1, 2, roofTileRow.resize([32, 2]).mv([-1, 1]))
         .rule(roofStruct, rep(10, roofTileRow).map(function (row, i) {
             return row.resize([32 - 2 * i, 2]).mv([i - 1, i]);
         }))
         .rule(roofStruct, [roofTileRow.resize([34, 2]).mv([-2, 0])])
-        .repeat(roofTileRow, 0, 2, roofTile)
-        .rule(tree, [trunk, crown])
-        .rule(tree, [tree.mv([randi(-10, 0), 0])])
+        .repeat(roofTileRow, 0, 2, roofTile);
 
-    var crownLayers = [];
-    for (var i = 0; i < 10; i++) {
-        var crownLayer = gen.addState();
-        gen.rule(crownLayer, rep(50, leaf).map(function (leaf) {
-            return leaf.mv([randi(-12, 12), randi(-10, 15)]);
-        }));
-        crownLayers.push(crownLayer.mv([randi(-3, 3), randi(-3, 3)]));
-    }
+    var treeModel = {
+        decay: .6,
+        decayL: 1,
+        init: 3,
+        initL: 8,
+        depth: 8
+    };
+    function depthTest(parent) { return parent.depth < treeModel.depth; };
+    var path = gen.addState(function(parent) {
+        this.isTree = true;
+        if (parent.isTree)
+            this.mv([0, parent.scope.size[1]]);
+        this.depth = parent.depth + 1 + Math.random();
+        this.resize([parent.scope.size[0] * treeModel.decay, parent.scope.size[1] * treeModel.decayL]);
+        this.rotate([.2 * this.locator * Math.PI * (Math.random() - .5)]);
+    });
+    var pathTerm = gen.addState();
 
-    for (var i = 0; i < 100; i++) {
-        gen.rule(crown, [
-            crownLayers[randi(0, 10)],
-            crownLayers[randi(0, 10)],
-            crownLayers[randi(0, 10)]
-        ]);
-    }
+    gen.rule(tree, [path]);
+    gen.rule(path, [pathTerm, path], depthTest);
+    gen.rule(path, [pathTerm, path, path, path], depthTest);
 }());

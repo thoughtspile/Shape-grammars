@@ -48,9 +48,9 @@
                 return transition.cond(token);
             });
         if (transitions.length == 0) {
-            into.push(token);
+            into.term.push(token);
         } else {
-            into.push.apply(into, randEl(transitions)(token));
+            into.nterm.push.apply(into.nterm, randEl(transitions)(token));
         }
         return into;
     };
@@ -74,12 +74,12 @@
     // add a basic repeat rule (along axis)
     Grammar.prototype.repeat = function (from, axis, size, to, cond) {
         to = funcify(to);
+        size = funcify(size);
         var transition = function(parent) {
             var offset = [0, 0];
             var res = [];
-            var count = Math.round(parent.scope.size[axis] / size) || 1;
+            var count = Math.round(parent.scope.size[axis] / size(parent)) || 1;
             var adjustedSize = parent.scope.size[axis] / count;
-            console.log(count)
             var factory = to(parent);
             for (var i = 0; i < count; i++) {
                 var temp = factory.make(parent, i, count);
@@ -133,17 +133,24 @@
     };
 
     // run grammar
-    Grammar.prototype.apply = function(callback, root) {
+    Grammar.prototype.apply = function(callback, state) {
         if (!window.timer)
             window.timer = Date.now();
-        var state = root || [this.init().make()];
-        var newState = [];
-        while (state.length > 0)
-            this.expandState(state.pop(), newState);
-        newState.push.apply(newState, state);
-        callback(newState);
+        state = state || {
+            term: [],
+            nterm: [this.init().make()]
+        };
+        var newState = {
+            term: state.term,
+            nterm: []
+        };
+        while (state.nterm.length > 0)
+            this.expandState(state.nterm.pop(), newState);
+        // newState.push.apply(newState, state);
+        // newState.reverse()
+        callback(newState.term);
 
-        if(!newState.every(this.isTerminal.bind(this))) {
+        if(newState.nterm.length != 0) {
             setTimeout(this.apply.bind(this, callback, newState), 0);
         } else {
             console.log(Date.now() - window.timer)

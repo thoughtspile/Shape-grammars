@@ -11,6 +11,8 @@ var render = function(canvas, data) {
     var target = canvas.getContext('2d');
 
     drawSky(canvas, target)
+    var pad = .2
+    var pad2 = 2 * pad;
 
     data.forEach(function(state) {
         var pos = state.scope.pos;
@@ -18,17 +20,17 @@ var render = function(canvas, data) {
         var rot = state.scope.rot[0];
         target.fillStyle = state.color;
         target.save();
-        target.translate(pos[0], canvasHeight - pos[1]);
+        target.translate(pos[0] - pad, canvasHeight - pos[1] + pad);
         target.scale(1, -1);
         target.rotate(rot);
         if (state.shape == 'triangle') {
         // if (false) {
             target.beginPath();
-            target.moveTo(0, size[1]);
-            target.lineTo(size[0], 0);
+            target.moveTo(0, size[1] + pad);
+            target.lineTo(size[0] + pad, 0);
             target.lineTo(0, 0);
         } else {
-            target.fillRect(0, 0, size[0], size[1]);
+            target.fillRect(0, 0, size[0] + pad, size[1] + pad);
         }
         target.fill();
         target.restore();
